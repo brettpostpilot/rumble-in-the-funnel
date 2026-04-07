@@ -168,6 +168,11 @@ async function fetchLeaderboard() {
 }
 
 async function submitScore(name, company, score) {
+  if (containsProfanity(name) || containsProfanity(company)) {
+    entryError = "KEEP IT CLEAN, CHAMP!";
+    nameSubmitted = false;
+    return;
+  }
   try {
     await fetch(FIREBASE_URL + "/leaderboard.json", {
       method: "POST",
