@@ -73,6 +73,16 @@ document.addEventListener("keydown",e=>{
   if(!keys[e.key])justPressed[e.key]=true;keys[e.key]=true;e.preventDefault()
 });
 document.addEventListener("keyup",e=>{keys[e.key]=false});
+document.addEventListener("paste",e=>{
+  if(screen!=="enterName")return;
+  e.preventDefault();
+  const text=(e.clipboardData||window.clipboardData).getData("text").replace(/[\r\n\t]/g,"");
+  if(!text)return;
+  if(containsProfanity(text)){entryError="KEEP IT CLEAN, CHAMP!";return}
+  entryError="";
+  if(activeField==="name"){nameInput=(nameInput+text).substring(0,20)}
+  else{companyInput=(companyInput+text).substring(0,25)}
+});
 const PK={left:"ArrowLeft",right:"ArrowRight",up:"ArrowUp",down:"ArrowDown",jab:"z",hook:"x",upper:"c",special:"v"};
 
 // ═══════ FIREBASE CONFIG ═══════
@@ -102,7 +112,7 @@ function normalizeText(text) {
   return text.toLowerCase()
     .replace(/[@4]/g, "a")
     .replace(/[3]/g, "e")
-    .replace(/[1!|l]/g, "i")
+    .replace(/[1!|]/g, "i")
     .replace(/[0]/g, "o")
     .replace(/[5\$]/g, "s")
     .replace(/[7]/g, "t")
@@ -112,14 +122,24 @@ function normalizeText(text) {
 }
 
 function containsProfanity(text) {
+  if (!text || text.trim().length === 0) return false;
+  // Check normalized version (catches l33t speak)
   const normalized = normalizeText(text);
   for (const word of BLOCKED_WORDS) {
     if (normalized.includes(word)) return true;
   }
-  // Check original lowercase too (catches spacing tricks)
-  const lower = text.toLowerCase().replace(/[^a-z]/g, "");
+  // Check with only non-alpha stripped (catches "f u c k" and "f.u.c.k")
+  const stripped = text.toLowerCase().replace(/[^a-z]/g, "");
   for (const word of BLOCKED_WORDS) {
-    if (lower.includes(word)) return true;
+    if (stripped.includes(word)) return true;
+  }
+  // Check each space-separated word individually
+  const words = text.toLowerCase().split(/\s+/);
+  for (const w of words) {
+    const cleanW = w.replace(/[^a-z]/g, "");
+    for (const blocked of BLOCKED_WORDS) {
+      if (cleanW === blocked) return true;
+    }
   }
   return false;
 }
